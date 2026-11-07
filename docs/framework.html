@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="QT Quant CN 离线量化研究插件的交互式架构总览">
+  <title>QT Quant CN · 框架可视化</title>
+  <style>
+    :root {
+      --paper: #f4f2ec;
+      --surface: #fffefa;
+      --ink: #172522;
+      --muted: #68736e;
+      --line: #d9ddd5;
+      --accent: #087e6c;
+      --accent-soft: #dcefe9;
+      --navy: #183c4a;
+      --amber: #a95e16;
+      --amber-soft: #f8ead9;
+      --danger: #a23f36;
+      --danger-soft: #f6e4e0;
+      --shadow: 0 16px 40px rgba(23, 37, 34, .07);
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+      line-height: 1.6;
+    }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    button { font: inherit; }
+    a { color: inherit; }
+    button:focus-visible, a:focus-visible {
+      outline: 3px solid #e69a45;
+      outline-offset: 3px;
+    }
+    .rail {
+      position: fixed;
+      inset: 0 auto 0 0;
+      width: 244px;
+      padding: 32px 24px;
+      background: var(--ink);
+      color: #f7f5ee;
+      display: flex;
+      flex-direction: column;
+      z-index: 10;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .brand-mark {
+      width: 44px; height: 44px; display: grid; place-items: center;
+      border: 1px solid #5f7770; border-radius: 12px; color: #82dfca;
+      font: 700 17px/1 Consolas, monospace;
+    }
+    .brand strong { display: block; letter-spacing: .08em; font-size: 15px; }
+    .brand small { color: #a9b7b1; font-size: 11px; letter-spacing: .14em; }
+    .rail-label { margin: 42px 0 12px; color: #81928c; font-size: 11px; letter-spacing: .16em; }
+    .nav { display: grid; gap: 4px; }
+    .nav a {
+      padding: 9px 12px; border-radius: 9px; color: #bfcac5;
+      text-decoration: none; font-size: 14px; transition: .18s ease;
+    }
+    .nav a:hover { color: white; background: #263a35; }
+    .nav span { display: inline-block; width: 28px; color: #6f8980; font: 12px Consolas, monospace; }
+    .rail-note {
+      margin-top: auto; padding-top: 20px; border-top: 1px solid #354843;
+      color: #a9b7b1; font-size: 12px;
+    }
+    .rail-note strong { display: block; color: #e4eae6; margin-bottom: 5px; }
+    main { margin-left: 244px; padding: 42px 48px 72px; }
+    .wrap { max-width: 1180px; margin: 0 auto; }
+    .eyebrow {
+      color: var(--accent); font: 700 11px/1.4 Consolas, monospace;
+      letter-spacing: .16em; text-transform: uppercase;
+    }
+    .hero { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(300px, .75fr); gap: 48px; align-items: end; }
+    h1 { margin: 14px 0 18px; font-size: clamp(38px, 5vw, 66px); line-height: 1.08; letter-spacing: -.045em; font-weight: 650; }
+    h1 em { color: var(--accent); font-style: normal; }
+    .hero-copy { max-width: 690px; color: var(--muted); font-size: 17px; margin: 0; }
+    .badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 7px; padding: 5px 10px;
+      border: 1px solid var(--line); border-radius: 99px; background: rgba(255,255,255,.45);
+      font-size: 12px; color: #4f5e58;
+    }
+    .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+    .manifest-card {
+      background: var(--navy); color: white; padding: 25px; border-radius: var(--radius);
+      box-shadow: var(--shadow); position: relative; overflow: hidden;
+    }
+    .manifest-card::after {
+      content: "QT"; position: absolute; right: -8px; bottom: -40px;
+      color: rgba(255,255,255,.045); font: 700 140px/1 Consolas, monospace;
+    }
+    .manifest-card small { color: #a7c2ca; font: 11px Consolas, monospace; letter-spacing: .12em; }
+    .manifest-card h2 { font-size: 21px; margin: 8px 0 20px; }
+    .manifest-row { display: flex; justify-content: space-between; gap: 16px; border-top: 1px solid #345664; padding: 9px 0; font-size: 12px; }
+    .manifest-row span { color: #b8cbd1; }
+    .manifest-row code { font-family: Consolas, monospace; color: #e6f5f1; }
+    section { padding-top: 82px; scroll-margin-top: 20px; }
+    .section-head { display: grid; grid-template-columns: 80px minmax(0, 1fr); gap: 20px; margin-bottom: 28px; }
+    .section-no { color: #9ca69f; font: 14px Consolas, monospace; padding-top: 7px; }
+    .section-head h2 { margin: 0 0 6px; font-size: 28px; letter-spacing: -.025em; }
+    .section-head p { margin: 0; color: var(--muted); max-width: 720px; }
+    .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+    .flow-panel { overflow: hidden; }
+    .tabs { display: flex; gap: 4px; padding: 8px; border-bottom: 1px solid var(--line); background: #eeeee7; }
+    .tab {
+      border: 0; background: transparent; color: var(--muted); padding: 10px 16px;
+      border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 13px;
+    }
+    .tab[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 2px 8px rgba(23,37,34,.07); }
+    .tab code { margin-left: 8px; color: var(--accent); font-family: Consolas, monospace; }
+    .flow-body { padding: 30px; }
+    .flow-intro { display: flex; justify-content: space-between; align-items: start; gap: 24px; margin-bottom: 28px; }
+    .flow-intro h3 { margin: 0 0 5px; font-size: 20px; }
+    .flow-intro p { margin: 0; color: var(--muted); font-size: 14px; }
+    .command {
+      border: 1px solid var(--line); background: #f5f5ef; color: #42514b;
+      border-radius: 8px; padding: 7px 10px; cursor: pointer; white-space: nowrap;
+      font: 11px Consolas, monospace;
+    }
+    .command:hover { border-color: var(--accent); color: var(--accent); }
+    .flow-track { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 22px; }
+    .flow-step {
+      position: relative; min-height: 112px; text-align: left; border: 1px solid var(--line);
+      background: #fafaf6; padding: 16px 14px; border-radius: 12px; cursor: pointer;
+      transition: transform .18s ease, border-color .18s ease;
+    }
+    .flow-step:not(:last-child)::after {
+      content: "→"; position: absolute; right: -19px; top: 39px; color: #8c9b94; font-size: 18px;
+    }
+    .flow-step:hover { transform: translateY(-2px); border-color: #8fbdb1; }
+    .flow-step[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+    .step-index { display: block; color: var(--accent); font: 11px Consolas, monospace; margin-bottom: 12px; }
+    .flow-step strong { display: block; font-size: 14px; }
+    .flow-step small { display: block; color: var(--muted); margin-top: 5px; font-size: 11px; line-height: 1.45; }
+    .flow-detail {
+      margin-top: 24px; padding: 18px 20px; border-left: 3px solid var(--accent);
+      background: #f3f6f1; min-height: 90px;
+    }
+    .flow-detail strong { display: block; margin-bottom: 4px; }
+    .flow-detail p { margin: 0; color: #53635c; font-size: 14px; }
+    .flow-detail code { display: block; margin-top: 9px; color: var(--navy); font: 12px Consolas, monospace; overflow-wrap: anywhere; }
+    .split { display: grid; grid-template-columns: minmax(300px, .85fr) minmax(0, 1.15fr); gap: 20px; }
+    .tree { padding: 20px; font: 13px/1.65 Consolas, "Microsoft YaHei", monospace; }
+    .tree button {
+      display: block; width: 100%; border: 0; background: transparent; color: #44534d;
+      text-align: left; padding: 5px 8px; border-radius: 6px; cursor: pointer; white-space: pre;
+    }
+    .tree button:hover { background: #eef2eb; }
+    .tree button[aria-pressed="true"] { color: var(--accent); background: var(--accent-soft); }
+    .tree-root { padding: 5px 8px 10px; color: var(--ink); font-weight: 700; }
+    .file-detail { padding: 30px; display: flex; flex-direction: column; }
+    .file-detail .path { color: var(--accent); font: 12px Consolas, monospace; overflow-wrap: anywhere; }
+    .file-detail h3 { font-size: 23px; margin: 14px 0 8px; }
+    .file-detail p { color: var(--muted); margin: 0; }
+    .file-detail ul { margin: auto 0 0; padding: 22px 0 0 18px; color: #53615b; font-size: 13px; }
+    .lead-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .role {
+      border: 1px solid var(--line); background: var(--surface); border-radius: 14px;
+      padding: 18px; text-align: left; cursor: pointer; transition: .18s ease;
+    }
+    .role:hover { border-color: #8fbdb1; transform: translateY(-2px); }
+    .role[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+    .role-type { color: var(--accent); font: 10px Consolas, monospace; letter-spacing: .12em; }
+    .role strong { display: block; margin: 7px 0 3px; font: 600 15px Consolas, monospace; }
+    .role small { color: var(--muted); }
+    .specialists { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .role-detail { margin-top: 16px; padding: 20px 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .role-detail h3 { margin: 0 0 5px; font-size: 14px; }
+    .role-detail p { margin: 0; color: var(--muted); font-size: 13px; }
+    .role-detail .boundary h3 { color: var(--danger); }
+    .mechanics-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 20px; }
+    .mechanic { padding: 26px; }
+    .mechanic h3 { margin: 0 0 6px; font-size: 18px; }
+    .mechanic > p { margin: 0 0 24px; color: var(--muted); font-size: 13px; }
+    .states { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .state { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font: 11px Consolas, monospace; background: #fafaf6; }
+    .state.final { background: var(--accent-soft); color: #066655; border-color: #a8d3c7; }
+    .state.reject { background: var(--danger-soft); color: var(--danger); border-color: #e3bcb5; }
+    .arrow { color: #91a098; }
+    .state-branches { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding-left: 22px; font-size: 12px; color: var(--muted); }
+    .timing { display: grid; grid-template-columns: 1fr 42px 1fr; align-items: center; margin-top: 28px; }
+    .time-card { border: 1px solid var(--line); border-radius: 12px; padding: 16px; background: #fafaf6; }
+    .time-card small { color: var(--muted); font: 11px Consolas, monospace; }
+    .time-card strong { display: block; margin: 7px 0; }
+    .time-card p { margin: 0; color: var(--muted); font-size: 12px; }
+    .timing-arrow { text-align: center; color: var(--accent); font-size: 22px; }
+    .formula { margin-top: 18px; padding: 12px; background: var(--ink); color: #d8eee7; border-radius: 8px; font: 11px/1.6 Consolas, monospace; overflow-wrap: anywhere; }
+    .gate-panel { overflow: hidden; }
+    .gate-content { padding: 8px 26px 24px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { color: var(--muted); font-size: 11px; font-weight: 500; text-align: left; padding: 12px 8px; border-bottom: 1px solid var(--line); }
+    td { padding: 13px 8px; border-bottom: 1px solid #e8e9e3; vertical-align: top; }
+    td code { color: var(--navy); font: 12px Consolas, monospace; }
+    td:nth-child(2), th:nth-child(2) { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .gate-note { margin: 16px 0 0; color: var(--muted); font-size: 12px; }
+    .artifact-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .artifact { padding: 24px; position: relative; overflow: hidden; }
+    .artifact-no { color: #a0aaa4; font: 11px Consolas, monospace; }
+    .artifact h3 { margin: 20px 0 8px; font: 600 16px Consolas, monospace; overflow-wrap: anywhere; }
+    .artifact p { color: var(--muted); font-size: 13px; margin: 0; }
+    .artifact ul { padding-left: 17px; margin: 16px 0 0; font-size: 12px; color: #53615b; }
+    .callout {
+      margin-top: 22px; padding: 22px 26px; border: 1px solid #dfc7a8;
+      border-radius: 14px; background: var(--amber-soft); color: #704719;
+      display: flex; gap: 18px; align-items: start; font-size: 13px;
+    }
+    .callout strong { white-space: nowrap; color: var(--amber); }
+    footer { margin-top: 70px; padding-top: 22px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 20px; color: var(--muted); font-size: 11px; }
+    footer code { font-family: Consolas, monospace; }
+    .toast {
+      position: fixed; right: 24px; bottom: 24px; padding: 10px 16px; border-radius: 9px;
+      background: var(--ink); color: white; font-size: 13px; opacity: 0; transform: translateY(10px);
+      pointer-events: none; transition: .2s ease;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    noscript { display: block; padding: 16px; background: var(--danger-soft); color: var(--danger); }
+    @media (max-width: 1050px) {
+      main { padding: 34px 28px 60px; }
+      .hero { grid-template-columns: 1fr; gap: 28px; }
+      .manifest-card { max-width: 520px; }
+      .flow-track { grid-template-columns: 1fr; gap: 12px; }
+      .flow-step { min-height: 0; padding-left: 58px; }
+      .flow-step:not(:last-child)::after { content: "↓"; right: auto; left: 22px; top: auto; bottom: -22px; }
+      .step-index { position: absolute; left: 15px; top: 16px; }
+      .mechanics-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 760px) {
+      .rail { position: static; width: auto; padding: 18px 20px; }
+      .rail-label, .rail-note { display: none; }
+      .nav { display: flex; overflow-x: auto; margin-top: 16px; padding-bottom: 3px; }
+      .nav a { white-space: nowrap; }
+      .nav span { display: none; }
+      main { margin-left: 0; padding: 28px 18px 48px; }
+      h1 { font-size: 42px; }
+      section { padding-top: 60px; }
+      .section-head { grid-template-columns: 1fr; gap: 4px; }
+      .split, .lead-row, .role-detail, .artifact-grid { grid-template-columns: 1fr; }
+      .specialists { grid-template-columns: repeat(2, 1fr); }
+      .flow-body { padding: 20px; }
+      .flow-intro { display: block; }
+      .command { margin-top: 14px; white-space: normal; text-align: left; }
+      .role-detail { gap: 12px; }
+      .gate-content { padding: 8px 14px 18px; overflow-x: auto; }
+      table { min-width: 580px; }
+      .callout { display: block; }
+      .callout strong { display: block; margin-bottom: 5px; }
+      footer { display: block; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <aside class="rail">
+    <a class="brand" href="#top" aria-label="返回顶部">
+      <span class="brand-mark">QT</span>
+      <span><strong>QUANT CN</strong><small>FRAMEWORK MAP</small></span>
+    </a>
+    <div class="rail-label">探索框架</div>
+    <nav class="nav" aria-label="页面导航">
+      <a href="#flow"><span>01</span>两条工作流</a>
+      <a href="#architecture"><span>02</span>目录与职责</a>
+      <a href="#team"><span>03</span>角色协作</a>
+      <a href="#mechanics"><span>04</span>运行机制</a>
+      <a href="#gates"><span>05</span>风险门禁</a>
+      <a href="#artifacts"><span>06</span>运行产物</a>
+    </nav>
+    <div class="rail-note"><strong>边界清晰</strong>仅做离线研究与回测<br>不连接券商，不自动实盘交易</div>
+  </aside>
+
+  <main id="top">
+    <div class="wrap">
+      <noscript>请启用 JavaScript，以使用流程、目录和角色的交互说明。</noscript>
+      <header class="hero">
+        <div>
+          <div class="eyebrow">QT / QUANT CN · ARCHITECTURE EXPLORER</div>
+          <h1>把量化研究<br>变成一条<em>可审计</em>的路</h1>
+          <p class="hero-copy">你提供一份本地价格 CSV；框架完成数据检查、双均线回测、样本外评价与风险门禁，并把每一步保存下来。候选策略只有在同一数据上通过比较，才被接受。</p>
+          <div class="badges">
+            <span class="badge">2 个公开入口</span>
+            <span class="badge">8 个协作角色</span>
+            <span class="badge">15 项回归测试</span>
+            <span class="badge">仅 Python 标准库</span>
+          </div>
+        </div>
+        <div class="manifest-card" aria-label="插件清单摘要">
+          <small>PLUGIN MANIFEST</small>
+          <h2>QT Quant CN</h2>
+          <div class="manifest-row"><span>插件 ID</span><code>qt</code></div>
+          <div class="manifest-row"><span>当前版本</span><code>0.1.0</code></div>
+          <div class="manifest-row"><span>运行方式</span><code>offline / local</code></div>
+          <div class="manifest-row"><span>输入</span><code>date, close CSV</code></div>
+          <div class="manifest-row"><span>策略</span><code>dual SMA / long-flat</code></div>
+          <div class="manifest-row"><span>提交</span><code>6a4e7ce</code></div>
+        </div>
+      </header>
+
+      <section id="flow">
+        <div class="section-head"><span class="section-no">01 / 06</span><div><h2>两条工作流，解决两个问题</h2><p><strong>start</strong> 建立一份基线研究；<strong>evo</strong> 检查新参数是否真比基线更好。点击每个步骤查看它具体做什么。</p></div></div>
+        <div class="panel flow-panel">
+          <div class="tabs" role="tablist" aria-label="工作流选择">
+            <button class="tab" id="tab-start" role="tab" aria-selected="true" aria-controls="flow-content" data-flow="start">建立基线 <code>/qt:start</code></button>
+            <button class="tab" id="tab-evo" role="tab" aria-selected="false" aria-controls="flow-content" data-flow="evo">验证候选 <code>/qt:evo</code></button>
+          </div>
+          <div class="flow-body" id="flow-content" role="tabpanel" aria-labelledby="tab-start">
+            <div class="flow-intro"><div><h3 id="flow-title"></h3><p id="flow-description"></p></div><button class="command" id="copy-command" title="复制命令"></button></div>
+            <div class="flow-track" id="flow-track"></div>
+            <div class="flow-detail" id="flow-detail" aria-live="polite"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="architecture">
+        <div class="section-head"><span class="section-no">02 / 06</span><div><h2>目录不是清单，而是职责边界</h2><p>入口负责接收意图，Skill 负责编排，运行时负责确定性计算。点击左侧目录，查看右侧职责说明。</p></div></div>
+        <div class="split">
+          <div class="panel tree" aria-label="插件目录树">
+            <div class="tree-root">qt/</div>
+            <button data-file="manifest" aria-pressed="true">├── kimi.plugin.json</button>
+            <button data-file="commands" aria-pressed="false">├── commands/{start,evo}.md</button>
+            <button data-file="skills" aria-pressed="false">├── skills/{start,evo}/</button>
+            <button data-file="agents" aria-pressed="false">├── agents/ <span>· 2 leads + 6 specialists</span></button>
+            <button data-file="references" aria-pressed="false">├── references/</button>
+            <button data-file="runtime" aria-pressed="false">├── runtime/quant_cn/</button>
+            <button data-file="scripts" aria-pressed="false">├── scripts/{qt,check}.py</button>
+            <button data-file="tests" aria-pressed="false">└── tests/ <span>· 15 checks</span></button>
+          </div>
+          <div class="panel file-detail" id="file-detail" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section id="team">
+        <div class="section-head"><span class="section-no">03 / 06</span><div><h2>两个编排者，六个独立审查角色</h2><p>代理负责组织和复核，不手工估算最终指标。所有数值以确定性控制器写出的结果为准。点击角色查看责任与禁区。</p></div></div>
+        <div class="lead-row" id="leads"></div>
+        <div class="specialists" id="specialists"></div>
+        <div class="panel role-detail" id="role-detail" aria-live="polite"></div>
+      </section>
+
+      <section id="mechanics">
+        <div class="section-head"><span class="section-no">04 / 06</span><div><h2>每一次运行，都有明确状态</h2><p>状态不可跳级，终态不可覆盖。策略信号延迟一根 K 线生效，从机制上避免使用未来数据。</p></div></div>
+        <div class="mechanics-grid">
+          <div class="panel mechanic">
+            <h3>持久化状态机</h3><p>每次转换记录时间、来源、目标和说明，写入 <code>state.json</code>。</p>
+            <div class="states" aria-label="状态转换顺序">
+              <span class="state">CREATED</span><span class="arrow">→</span>
+              <span class="state">DATA_VALIDATED</span><span class="arrow">→</span>
+              <span class="state">BACKTESTED</span><span class="arrow">→</span>
+              <span class="state">EVALUATED</span>
+            </div>
+            <div class="state-branches"><span>→</span><span class="state final">COMPLETED 通过</span><span>或</span><span class="state reject">REJECTED 门禁拒绝</span></div>
+            <div class="state-branches"><span>↳</span><span>任一非终态出错可进入</span><span class="state reject">FAILED</span></div>
+          </div>
+          <div class="panel mechanic">
+            <h3>信号晚一根 K 线执行</h3><p>收盘后才知道的信号，不会用于赚取同一根 K 线的收益。</p>
+            <div class="timing">
+              <div class="time-card"><small>第 t 根 · 收盘</small><strong>计算双均线信号</strong><p>快线 &gt; 慢线 → 下一时段持有多头，否则空仓。</p></div>
+              <div class="timing-arrow">→</div>
+              <div class="time-card"><small>第 t+1 根</small><strong>仓位开始生效</strong><p>使用昨日信号 × 今日资产收益，再扣仓位变化费用。</p></div>
+            </div>
+            <div class="formula">net_return = position × asset_return − |Δposition| × fee_bps / 10000</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="gates">
+        <div class="section-head"><span class="section-no">05 / 06</span><div><h2>不是回测结束就算成功</h2><p>测试集先过绝对风险门禁；候选参数还要过同数据和相对改善门禁。任何缺失或非有限指标都不会通过。</p></div></div>
+        <div class="panel gate-panel">
+          <div class="tabs" role="tablist" aria-label="门禁类型">
+            <button class="tab gate-tab" role="tab" aria-selected="true" aria-controls="gate-table" data-gates="absolute">绝对门禁 · start 与 evo</button>
+            <button class="tab gate-tab" role="tab" aria-selected="false" aria-controls="gate-table" data-gates="relative">相对门禁 · 仅 evo</button>
+          </div>
+          <div class="gate-content" id="gate-table" role="tabpanel">
+            <table>
+              <thead><tr><th>检查项</th><th>默认通过条件</th><th>含义</th></tr></thead>
+              <tbody id="gate-rows"></tbody>
+            </table>
+            <p class="gate-note" id="gate-note"></p>
+          </div>
+        </div>
+      </section>
+
+      <section id="artifacts">
+        <div class="section-head"><span class="section-no">06 / 06</span><div><h2>最终交付不是一个数字，而是一组证据</h2><p>每次运行都有独立目录。拒绝和失败也会保留记录，不会只展示好看的试验。</p></div></div>
+        <div class="artifact-grid">
+          <article class="panel artifact"><span class="artifact-no">01 / RESULT</span><h3>result.json</h3><p>这次运行“做了什么、结果如何、为什么通过或拒绝”。</p><ul><li>参数与数据 SHA-256</li><li>训练 / 测试指标</li><li>逐项门禁与失败原因</li><li>evo 的基线引用</li></ul></article>
+          <article class="panel artifact"><span class="artifact-no">02 / DAILY TRACE</span><h3>equity_curve.csv</h3><p>逐日复核收益和净值，不必相信一个汇总数字。</p><ul><li>日期与训练 / 测试分段</li><li>收盘价、信号和实际仓位</li><li>仓位变化与净收益</li><li>逐日组合净值</li></ul></article>
+          <article class="panel artifact"><span class="artifact-no">03 / AUDIT TRAIL</span><h3>state.json</h3><p>按时间还原运行路径，确认没有跳过阶段。</p><ul><li>当前终态</li><li>状态转换历史</li><li>UTC 时间与阶段说明</li><li>失败时另有 error.json</li></ul></article>
+        </div>
+        <div class="callout"><strong>如何理解结果</strong><span>训练 / 测试按时间先后以 70% / 30% 切分，不随机打乱；指标按日频和 252 个年化交易日计算。自带 prices.csv 是合成数据，不是真实行情。单次样本外改善不代表稳定超额收益，所有结果仅供研究，不构成投资建议。</span></div>
+      </section>
+
+      <footer><span>内容依据当前仓库实际代码与契约生成 · 静态本地页面，无网络请求</span><code>QT Quant CN / v0.1.0 / 6a4e7ce</code></footer>
+    </div>
+  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite">命令已复制</div>
+
+  <script>
+    const flows = {
+      start: {
+        title: "建立一条可复现的基线",
+        description: "默认参数为 fast=5、slow=20、fee=10 bps；可用参数覆盖。",
+        command: "python scripts/qt.py start --data tests/fixtures/prices.csv",
+        steps: [
+          ["输入本地 CSV", "date, close", "读取 UTF-8 CSV。日期必须严格递增且不重复，收盘价必须有限且大于 0；不会自动补值或编造行情。", "runtime/quant_cn/data.py"],
+          ["校验数据与参数", "质量 + 哈希", "检查 fast >= 1、slow > fast、最少行数和费用约束，同时计算文件 SHA-256，确保结果能追溯到具体数据。", "state: CREATED → DATA_VALIDATED"],
+          ["运行双均线回测", "仅做多 / 空仓", "快均线高于慢均线产生多头信号；信号下一根 K 线生效。逐日扣除仓位变化费用并计算净值。", "state: DATA_VALIDATED → BACKTESTED"],
+          ["计算样本外指标", "70% / 30% 时间切分", "按时间顺序切分训练与测试段，在测试段计算收益、Sharpe、最大回撤、年化波动、订单数和持仓比例。", "train_fraction = 0.7 · annualization = 252"],
+          ["门禁并保存证据", "通过或拒绝", "六项绝对门禁全部通过才进入 COMPLETED，否则进入 REJECTED。无论结果如何，都保留状态；成功评价后保存结果与逐日曲线。", "state: EVALUATED → COMPLETED / REJECTED"]
+        ]
+      },
+      evo: {
+        title: "验证候选，但不覆盖基线",
+        description: "必须提供同一份 CSV，以及一次 start 生成的 result.json。",
+        command: "python scripts/qt.py evo --data <CSV> --baseline <result.json> --fast 3 --slow 15",
+        steps: [
+          ["提供候选与基线", "CSV + result.json", "候选包含新均线参数；基线必须是 schema v1 的 start 结果，并含有效的测试集 Sharpe、收益、回撤与数据哈希。", "--baseline <start-run>/result.json"],
+          ["确认同一数据", "SHA-256 一致", "候选和基线必须使用完全相同的输入文件。数据不同就无法进行公平比较，same_dataset 门禁会拒绝。", "decision.baseline_modified = false"],
+          ["回测候选参数", "相同计算引擎", "候选沿用与基线相同的信号、费用、收益和时间切分逻辑，避免比较口径发生变化。", "fast >= 1 · slow > fast"],
+          ["执行双重门禁", "绝对 + 相对", "候选既要自己通过绝对风险门禁，也要至少改善 Sharpe 0.05、收益不低于基线，且回撤最多放宽 0.02。", "10 gates in total"],
+          ["接受或拒绝候选", "基线保持不变", "所有门禁通过才 accepted=true。候选只写入自己的独立运行目录，不修改基线、策略代码或任何生产配置。", "exit 0 = accepted · exit 2 = rejected"]
+        ]
+      }
+    };
+
+    const files = {
+      manifest: ["kimi.plugin.json", "插件身份证与能力清单", "声明插件名称、版本、中文界面，以及 commands、skills、agents 的加载位置。Kimi Code 据此识别并注册 QT。", ["插件 ID：qt", "版本：0.1.0", "许可证字段：MIT"]],
+      commands: ["commands/{start,evo}.md", "两个公开入口", "把 /qt:start 和 /qt:evo 的原始参数交给对应 Skill。入口不自行计算，也不允许臆造市场数据。", ["start：建立基线", "evo：验证候选", "命令命名空间：qt"]],
+      skills: ["skills/{start,evo}/SKILL.md", "工作流编排契约", "规定输入要求、控制器命令、退出码和最终汇报格式。start 交给 research-lead，evo 交给 evolution-lead。", ["缺参数时询问", "退出码 0 / 2 / 1", "如实报告拒绝与错误"]],
+      agents: ["agents/", "八个角色的分工说明", "两位 lead 负责任务编排，六位 specialist 按需提供专业复核。简单运行无需为了分工而分工。", ["2 个 lead", "6 个 specialist", "最终数值以控制器产物为准"]],
+      references: ["references/", "所有人共同遵守的契约", "保存结果 schema、默认门禁、角色卡和数据计算定义，让工作流与数值实现使用同一套语言。", ["data_contract.md", "policies/default.json", "schemas/result.schema.json"]],
+      runtime: ["runtime/quant_cn/", "确定性计算核心", "实际完成 CSV 校验、双均线信号、逐日收益、指标、风险门禁和状态持久化。这里不依赖语言模型猜测数字。", ["backtest.py：回测与指标", "gates.py：绝对与相对门禁", "pipeline.py：运行管线", "state.py：合法状态转换"]],
+      scripts: ["scripts/{qt,check}.py", "可直接运行的控制入口", "qt.py 提供 start、evo、status、validate 四个动作；check.py 使用标准库 unittest 发现并运行全部测试。", ["无需第三方 Python 包", "支持命令行独立使用", "拒绝时 evo/start 返回退出码 2"]],
+      tests: ["tests/", "回归保护与合成样例", "覆盖未来函数、费用、指标复算、状态机、门禁、数据错误、插件结构和端到端流程。fixture 明确标记为合成数据。", ["15 项测试全部通过", "测试不连接外部行情", "验证候选不修改基线"]]
+    };
+
+    const roles = [
+      { id: "research-lead", type: "LEAD / START", duty: "编排基线研究", detail: "组织 start 工作流，核验输入、运行和门禁，并交付基线结果。", boundary: "不得编造数据，不得实盘下单。", lead: true },
+      { id: "evolution-lead", type: "LEAD / EVOLUTION", duty: "编排候选验证", detail: "组织同数据候选评估，汇总相对门禁，并保护原始基线。", boundary: "不得覆盖基线，不得隐藏失败试验。", lead: true },
+      { id: "data-specialist", type: "SPECIALIST / DATA", duty: "数据质量与哈希", detail: "检查价格 CSV 契约、日期顺序、缺失值、正值约束与数据哈希。", boundary: "不得自动补值或修改行情。" },
+      { id: "strategy-specialist", type: "SPECIALIST / STRATEGY", duty: "信号与参数语义", detail: "解释双均线信号、参数约束、交易成本，并提示过拟合风险。", boundary: "不得承诺策略收益。" },
+      { id: "risk-specialist", type: "SPECIALIST / RISK", duty: "风险与晋级门禁", detail: "审查收益、波动、Sharpe、回撤、费用以及绝对和相对门禁。", boundary: "不得放宽阈值制造通过。" },
+      { id: "backtest-specialist", type: "SPECIALIST / BACKTEST", duty: "回测执行与复算", detail: "运行并审查确定性回测、逐日收益、费用和状态持久化。", boundary: "不得绕过确定性控制器。" },
+      { id: "validation-specialist", type: "SPECIALIST / VALIDATION", duty: "独立验证", detail: "运行回归测试，核验结果 schema、状态历史和基线不可变性。", boundary: "不得删除失败测试。" },
+      { id: "report-specialist", type: "SPECIALIST / REPORT", duty: "忠实结果摘要", detail: "把运行产物整理为简洁、可审计的中文结果，并提供审计路径。", boundary: "不得混淆训练与测试，或混淆错误与门禁拒绝。" }
+    ];
+
+    const gateSets = {
+      absolute: {
+        note: "来源：references/policies/default.json。以上六项加上费用约束，任一失败都会拒绝。收益、回撤和波动阈值使用小数表示，例如 0.25 = 25%。",
+        rows: [
+          ["test_rows", ">= 15 行", "测试集至少有 15 根 K 线，避免样本太短。"],
+          ["test_total_return", ">= 0", "测试集净收益不为负。"],
+          ["test_sharpe", ">= 0", "测试集 Sharpe 不为负；无风险利率按 0。"],
+          ["test_max_drawdown", "<= 0.25", "测试集最大回撤不超过 25%。"],
+          ["test_annualized_volatility", "<= 0.80", "测试集年化波动不超过 80%。"],
+          ["fee_bps", "<= 100 bps", "单边仓位变化费用参数不超过 100 个基点。"]
+        ]
+      },
+      relative: {
+        note: "候选在通过左侧六项绝对门禁的基础上，还必须同时通过以下四项。evo 不会因候选更好而自动改写基线。",
+        rows: [
+          ["same_dataset", "== same", "候选与基线的输入 CSV SHA-256 必须一致。"],
+          ["sharpe_improvement", ">= 0.05", "候选测试集 Sharpe 至少比基线高 0.05。"],
+          ["candidate_total_return", ">= baseline", "候选测试集总收益不得低于基线。"],
+          ["candidate_max_drawdown", "<= baseline + 0.02", "候选回撤最多比基线多 2 个百分点。"]
+        ]
+      }
+    };
+
+    let activeFlow = "start";
+    let activeStep = 0;
+    const flowTrack = document.getElementById("flow-track");
+    const flowDetail = document.getElementById("flow-detail");
+
+    function renderFlowDetail() {
+      const step = flows[activeFlow].steps[activeStep];
+      flowDetail.innerHTML = `<strong>${step[0]}</strong><p>${step[2]}</p><code>${step[3]}</code>`;
+      flowTrack.querySelectorAll(".flow-step").forEach((button, index) => button.setAttribute("aria-pressed", String(index === activeStep)));
+    }
+
+    function selectFlow(name) {
+      activeFlow = name;
+      activeStep = 0;
+      const flow = flows[name];
+      document.getElementById("flow-title").textContent = flow.title;
+      document.getElementById("flow-description").textContent = flow.description;
+      document.getElementById("copy-command").textContent = flow.command;
+      document.getElementById("flow-content").setAttribute("aria-labelledby", `tab-${name}`);
+      document.querySelectorAll("[data-flow]").forEach(button => {
+        const selected = button.dataset.flow === name;
+        button.setAttribute("aria-selected", String(selected));
+        button.tabIndex = selected ? 0 : -1;
+      });
+      flowTrack.innerHTML = flow.steps.map((step, index) => `<button class="flow-step" data-step="${index}" aria-pressed="${index === 0}"><span class="step-index">0${index + 1}</span><strong>${step[0]}</strong><small>${step[1]}</small></button>`).join("");
+      flowTrack.querySelectorAll(".flow-step").forEach(button => button.addEventListener("click", () => {
+        activeStep = Number(button.dataset.step);
+        renderFlowDetail();
+      }));
+      renderFlowDetail();
+    }
+
+    document.querySelectorAll("[data-flow]").forEach(button => button.addEventListener("click", () => selectFlow(button.dataset.flow)));
+
+    function selectFile(key) {
+      const file = files[key];
+      document.querySelectorAll("[data-file]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.file === key)));
+      document.getElementById("file-detail").innerHTML = `<span class="path">${file[0]}</span><h3>${file[1]}</h3><p>${file[2]}</p><ul>${file[3].map(item => `<li>${item}</li>`).join("")}</ul>`;
+    }
+    document.querySelectorAll("[data-file]").forEach(button => button.addEventListener("click", () => selectFile(button.dataset.file)));
+
+    function roleButton(role) {
+      return `<button class="role" data-role="${role.id}" aria-pressed="false"><span class="role-type">${role.type}</span><strong>${role.id}</strong><small>${role.duty}</small></button>`;
+    }
+    document.getElementById("leads").innerHTML = roles.filter(role => role.lead).map(roleButton).join("");
+    document.getElementById("specialists").innerHTML = roles.filter(role => !role.lead).map(roleButton).join("");
+
+    function selectRole(id) {
+      const role = roles.find(item => item.id === id);
+      document.querySelectorAll("[data-role]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.role === id)));
+      document.getElementById("role-detail").innerHTML = `<div><h3>${role.id} · 负责什么</h3><p>${role.detail}</p></div><div class="boundary"><h3>明确禁区</h3><p>${role.boundary}</p></div>`;
+    }
+    document.querySelectorAll("[data-role]").forEach(button => button.addEventListener("click", () => selectRole(button.dataset.role)));
+
+    function selectGates(name) {
+      const set = gateSets[name];
+      document.querySelectorAll("[data-gates]").forEach(button => {
+        const selected = button.dataset.gates === name;
+        button.setAttribute("aria-selected", String(selected));
+        button.tabIndex = selected ? 0 : -1;
+      });
+      document.getElementById("gate-rows").innerHTML = set.rows.map(row => `<tr><td><code>${row[0]}</code></td><td>${row[1]}</td><td>${row[2]}</td></tr>`).join("");
+      document.getElementById("gate-note").textContent = set.note;
+    }
+    document.querySelectorAll("[data-gates]").forEach(button => button.addEventListener("click", () => selectGates(button.dataset.gates)));
+
+    const toast = document.getElementById("toast");
+    let toastTimer;
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove("show"), 1800);
+    }
+    document.getElementById("copy-command").addEventListener("click", async () => {
+      const text = flows[activeFlow].command;
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast("命令已复制");
+      } catch (_) {
+        const input = document.createElement("textarea");
+        input.value = text;
+        input.style.position = "fixed";
+        input.style.opacity = "0";
+        document.body.appendChild(input);
+        input.select();
+        const copied = document.execCommand("copy");
+        input.remove();
+        showToast(copied ? "命令已复制" : "复制失败，请手动选择命令");
+      }
+    });
+
+    selectFlow("start");
+    selectFile("manifest");
+    selectRole("research-lead");
+    selectGates("absolute");
+  </script>
+</body>
+</html>
