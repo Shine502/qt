@@ -1,0 +1,16 @@
+{
+  "name": "qt",
+  "version": "0.1.0",
+  "description": "Auditable offline quantitative research, backtesting, and strategy evolution gates",
+  "keywords": ["quantitative-trading", "backtest", "risk", "cn"],
+  "license": "MIT",
+  "commands": "./commands/",
+  "skills": "./skills/",
+  "agents": "./agents/",
+  "interface": {
+    "displayName": "QT Quant CN",
+    "shortDescription": "离线量化研究、回测与策略进化门禁",
+    "longDescription": "以本地 CSV 为输入，运行无未来函数的双均线回测，并通过持久化状态机与数值门禁评估候选策略。不连接券商，不执行实盘交易。",
+    "defaultLocale": "zh-CN"
+  }
+}

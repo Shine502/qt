@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "train_fraction": 0.7,
+  "min_rows": 60,
+  "min_test_rows": 15,
+  "min_test_total_return": 0.0,
+  "min_test_sharpe": 0.0,
+  "max_test_drawdown": 0.25,
+  "max_test_annualized_volatility": 0.8,
+  "max_fee_bps": 100.0,
+  "min_sharpe_improvement": 0.05,
+  "max_drawdown_slippage": 0.02
+}
