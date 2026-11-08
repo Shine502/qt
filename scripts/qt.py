@@ -34,10 +34,21 @@ def validate_plugin() -> None:
 
 
 def _add_run_arguments(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--data", required=True, help="CSV with date,close columns")
+    parser.add_argument("--data", required=True, help="CSV with date,close columns; raw OHLC for A-share mode")
+    parser.add_argument("--adjusted-data", help="forward-adjusted OHLC CSV for A-share mode")
+    parser.add_argument("--events", help="normalized corporate-action CSV for A-share mode")
     parser.add_argument("--fast", type=int, default=5)
     parser.add_argument("--slow", type=int, default=20)
     parser.add_argument("--fee-bps", type=float, default=10.0)
+    parser.add_argument("--initial-cash", type=float, default=1_000_000.0)
+    parser.add_argument("--commission-rate", type=float, default=0.00025)
+    parser.add_argument("--min-commission", type=float, default=5.0)
+    parser.add_argument("--slippage-bps", type=float, default=5.0)
+    parser.add_argument("--lot-size", type=int, default=100)
+    parser.add_argument("--validation-start", help="YYYY-MM-DD; enables train/validation/test split")
+    parser.add_argument("--test-start", help="YYYY-MM-DD; enables train/validation/test split")
+    parser.add_argument("--data-source")
+    parser.add_argument("--symbol")
     parser.add_argument("--output", default=".qt/runs")
     parser.add_argument("--policy")
 
@@ -76,15 +87,31 @@ def main(argv: list[str] | None = None) -> int:
             output_root=args.output,
             baseline_path=getattr(args, "baseline", None),
             policy_path=args.policy,
+            adjusted_data_path=args.adjusted_data,
+            events_path=args.events,
+            initial_cash=args.initial_cash,
+            commission_rate=args.commission_rate,
+            min_commission=args.min_commission,
+            slippage_bps=args.slippage_bps,
+            lot_size=args.lot_size,
+            validation_start=args.validation_start,
+            test_start=args.test_start,
+            data_source=args.data_source,
+            symbol=args.symbol,
         )
         summary = {
             "run_id": result["run_id"],
             "run_dir": str(Path(args.output).resolve() / result["run_id"]),
             "state": result["state"],
             "accepted": result["decision"]["accepted"],
+            "evaluation_segment": result["decision"]["evaluation_segment"],
             "test_metrics": result["metrics"]["test"],
             "reasons": result["decision"]["reasons"],
         }
+        if "validation" in result["metrics"]:
+            summary["validation_metrics"] = result["metrics"]["validation"]
+        if "benchmark" in result:
+            summary["benchmark_test_metrics"] = result["benchmark"]["metrics"]["test"]
         print(json.dumps(summary, ensure_ascii=False, indent=2, allow_nan=False))
         return 0 if result["decision"]["accepted"] else 2
     except (OSError, ValueError, KeyError, json.JSONDecodeError) as error:

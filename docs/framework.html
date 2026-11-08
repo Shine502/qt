@@ -283,11 +283,11 @@
         <div>
           <div class="eyebrow">QT / QUANT CN · ARCHITECTURE EXPLORER</div>
           <h1>把量化研究<br>变成一条<em>可审计</em>的路</h1>
-          <p class="hero-copy">你提供一份本地价格 CSV；框架完成数据检查、双均线回测、样本外评价与风险门禁，并把每一步保存下来。候选策略只有在同一数据上通过比较，才被接受。</p>
+          <p class="hero-copy">使用 Kimi Datasource 缓存真实 A 股行情，或提供本地 CSV；框架完成数据检查、双均线与买入持有对照、分段评价和风险门禁，并保存每一步证据。</p>
           <div class="badges">
             <span class="badge">2 个公开入口</span>
             <span class="badge">8 个协作角色</span>
-            <span class="badge">15 项回归测试</span>
+            <span class="badge">21 项回归测试</span>
             <span class="badge">仅 Python 标准库</span>
           </div>
         </div>
@@ -295,11 +295,11 @@
           <small>PLUGIN MANIFEST</small>
           <h2>QT Quant CN</h2>
           <div class="manifest-row"><span>插件 ID</span><code>qt</code></div>
-          <div class="manifest-row"><span>当前版本</span><code>0.1.0</code></div>
-          <div class="manifest-row"><span>运行方式</span><code>offline / local</code></div>
-          <div class="manifest-row"><span>输入</span><code>date, close CSV</code></div>
-          <div class="manifest-row"><span>策略</span><code>dual SMA / long-flat</code></div>
-          <div class="manifest-row"><span>提交</span><code>6a4e7ce</code></div>
+          <div class="manifest-row"><span>当前版本</span><code>0.2.0</code></div>
+          <div class="manifest-row"><span>运行方式</span><code>cached data / local compute</code></div>
+          <div class="manifest-row"><span>输入</span><code>CSV / A-share OHLC + events</code></div>
+          <div class="manifest-row"><span>策略</span><code>dual SMA / buy-and-hold benchmark</code></div>
+          <div class="manifest-row"><span>交易边界</span><code>research only / no brokerage</code></div>
         </div>
       </header>
 
@@ -330,7 +330,7 @@
             <button data-file="references" aria-pressed="false">├── references/</button>
             <button data-file="runtime" aria-pressed="false">├── runtime/quant_cn/</button>
             <button data-file="scripts" aria-pressed="false">├── scripts/{qt,check}.py</button>
-            <button data-file="tests" aria-pressed="false">└── tests/ <span>· 15 checks</span></button>
+            <button data-file="tests" aria-pressed="false">└── tests/ <span>· 21 checks</span></button>
           </div>
           <div class="panel file-detail" id="file-detail" aria-live="polite"></div>
         </div>
@@ -358,19 +358,19 @@
             <div class="state-branches"><span>↳</span><span>任一非终态出错可进入</span><span class="state reject">FAILED</span></div>
           </div>
           <div class="panel mechanic">
-            <h3>信号晚一根 K 线执行</h3><p>收盘后才知道的信号，不会用于赚取同一根 K 线的收益。</p>
+            <h3>信号后移，下一交易日执行</h3><p>收盘后才知道的信号，不会用于赚取同一根 K 线的收益。</p>
             <div class="timing">
-              <div class="time-card"><small>第 t 根 · 收盘</small><strong>计算双均线信号</strong><p>快线 &gt; 慢线 → 下一时段持有多头，否则空仓。</p></div>
+              <div class="time-card"><small>第 t 日 · 收盘</small><strong>计算双均线信号</strong><p>快线 &gt; 慢线 → 目标多头，否则空仓；A 股信号使用前复权收盘。</p></div>
               <div class="timing-arrow">→</div>
-              <div class="time-card"><small>第 t+1 根</small><strong>仓位开始生效</strong><p>使用昨日信号 × 今日资产收益，再扣仓位变化费用。</p></div>
+              <div class="time-card"><small>第 t+1 交易日</small><strong>开盘成交</strong><p>A 股按不复权开盘价、滑点、佣金、印花税和整手约束成交。</p></div>
             </div>
-            <div class="formula">net_return = position × asset_return − |Δposition| × fee_bps / 10000</div>
+            <div class="formula">A-share equity = cash + shares × raw_close</div>
           </div>
         </div>
       </section>
 
       <section id="gates">
-        <div class="section-head"><span class="section-no">05 / 06</span><div><h2>不是回测结束就算成功</h2><p>测试集先过绝对风险门禁；候选参数还要过同数据和相对改善门禁。任何缺失或非有限指标都不会通过。</p></div></div>
+        <div class="section-head"><span class="section-no">05 / 06</span><div><h2>不是回测结束就算成功</h2><p>start 报告最终测试；存在验证集时，evo 只按验证集决定晋级，最终测试不参与反复调参。任何缺失或非有限指标都不会通过。</p></div></div>
         <div class="panel gate-panel">
           <div class="tabs" role="tablist" aria-label="门禁类型">
             <button class="tab gate-tab" role="tab" aria-selected="true" aria-controls="gate-table" data-gates="absolute">绝对门禁 · start 与 evo</button>
@@ -389,14 +389,14 @@
       <section id="artifacts">
         <div class="section-head"><span class="section-no">06 / 06</span><div><h2>最终交付不是一个数字，而是一组证据</h2><p>每次运行都有独立目录。拒绝和失败也会保留记录，不会只展示好看的试验。</p></div></div>
         <div class="artifact-grid">
-          <article class="panel artifact"><span class="artifact-no">01 / RESULT</span><h3>result.json</h3><p>这次运行“做了什么、结果如何、为什么通过或拒绝”。</p><ul><li>参数与数据 SHA-256</li><li>训练 / 测试指标</li><li>逐项门禁与失败原因</li><li>evo 的基线引用</li></ul></article>
-          <article class="panel artifact"><span class="artifact-no">02 / DAILY TRACE</span><h3>equity_curve.csv</h3><p>逐日复核收益和净值，不必相信一个汇总数字。</p><ul><li>日期与训练 / 测试分段</li><li>收盘价、信号和实际仓位</li><li>仓位变化与净收益</li><li>逐日组合净值</li></ul></article>
+          <article class="panel artifact"><span class="artifact-no">01 / RESULT</span><h3>result.json</h3><p>这次运行“做了什么、结果如何、为什么通过或拒绝”。</p><ul><li>参数与组合数据 SHA-256</li><li>训练 / 验证 / 测试指标</li><li>买入持有基准与逐项门禁</li><li>evo 的基线引用</li></ul></article>
+          <article class="panel artifact"><span class="artifact-no">02 / DAILY TRACE</span><h3>equity_curve.csv + trades.csv</h3><p>逐日和逐笔复核收益、费用与净值。</p><ul><li>日期与数据分段</li><li>现金、持股和实际仓位</li><li>成交、佣金、印花税与分红</li><li>策略和基准独立曲线</li></ul></article>
           <article class="panel artifact"><span class="artifact-no">03 / AUDIT TRAIL</span><h3>state.json</h3><p>按时间还原运行路径，确认没有跳过阶段。</p><ul><li>当前终态</li><li>状态转换历史</li><li>UTC 时间与阶段说明</li><li>失败时另有 error.json</li></ul></article>
         </div>
-        <div class="callout"><strong>如何理解结果</strong><span>训练 / 测试按时间先后以 70% / 30% 切分，不随机打乱；指标按日频和 252 个年化交易日计算。自带 prices.csv 是合成数据，不是真实行情。单次样本外改善不代表稳定超额收益，所有结果仅供研究，不构成投资建议。</span></div>
+        <div class="callout"><strong>如何理解结果</strong><span>通用 CSV 默认按 70% / 30% 切分；真实 A 股样例按 2023 训练、2024 验证、2025 最终测试。指标按日频和 252 个年化交易日计算。单次样本外改善不代表稳定超额收益，所有结果仅供研究，不构成投资建议。</span></div>
       </section>
 
-      <footer><span>内容依据当前仓库实际代码与契约生成 · 静态本地页面，无网络请求</span><code>QT Quant CN / v0.1.0 / 6a4e7ce</code></footer>
+      <footer><span>内容依据当前仓库实际代码与契约生成 · 静态本地页面，无网络请求</span><code>QT Quant CN / v0.2.0</code></footer>
     </div>
   </main>
   <div class="toast" id="toast" role="status" aria-live="polite">命令已复制</div>
@@ -430,14 +430,14 @@
     };
 
     const files = {
-      manifest: ["kimi.plugin.json", "插件身份证与能力清单", "声明插件名称、版本、中文界面，以及 commands、skills、agents 的加载位置。Kimi Code 据此识别并注册 QT。", ["插件 ID：qt", "版本：0.1.0", "许可证字段：MIT"]],
+      manifest: ["kimi.plugin.json", "插件身份证与能力清单", "声明插件名称、版本、中文界面，以及 commands、skills、agents 的加载位置。Kimi Code 据此识别并注册 QT。", ["插件 ID：qt", "版本：0.2.0", "许可证字段：MIT"]],
       commands: ["commands/{start,evo}.md", "两个公开入口", "把 /qt:start 和 /qt:evo 的原始参数交给对应 Skill。入口不自行计算，也不允许臆造市场数据。", ["start：建立基线", "evo：验证候选", "命令命名空间：qt"]],
-      skills: ["skills/{start,evo}/SKILL.md", "工作流编排契约", "规定输入要求、控制器命令、退出码和最终汇报格式。start 交给 research-lead，evo 交给 evolution-lead。", ["缺参数时询问", "退出码 0 / 2 / 1", "如实报告拒绝与错误"]],
+      skills: ["skills/{start,evo}/SKILL.md", "工作流编排契约", "规定输入要求、Kimi Datasource 查询与缓存、控制器命令、退出码和最终汇报格式。", ["缺参数时询问", "核查公司行为完整性", "如实报告拒绝与错误"]],
       agents: ["agents/", "八个角色的分工说明", "两位 lead 负责任务编排，六位 specialist 按需提供专业复核。简单运行无需为了分工而分工。", ["2 个 lead", "6 个 specialist", "最终数值以控制器产物为准"]],
       references: ["references/", "所有人共同遵守的契约", "保存结果 schema、默认门禁、角色卡和数据计算定义，让工作流与数值实现使用同一套语言。", ["data_contract.md", "policies/default.json", "schemas/result.schema.json"]],
-      runtime: ["runtime/quant_cn/", "确定性计算核心", "实际完成 CSV 校验、双均线信号、逐日收益、指标、风险门禁和状态持久化。这里不依赖语言模型猜测数字。", ["backtest.py：回测与指标", "gates.py：绝对与相对门禁", "pipeline.py：运行管线", "state.py：合法状态转换"]],
+      runtime: ["runtime/quant_cn/", "确定性计算核心", "完成 CSV 校验、双均线信号、A 股成交与公司行为、基准、分段指标、风险门禁和状态持久化。", ["backtest.py：通用回测与指标", "a_share.py：精细成交与公司行为", "gates.py：绝对与相对门禁", "pipeline.py：运行管线"]],
       scripts: ["scripts/{qt,check}.py", "可直接运行的控制入口", "qt.py 提供 start、evo、status、validate 四个动作；check.py 使用标准库 unittest 发现并运行全部测试。", ["无需第三方 Python 包", "支持命令行独立使用", "拒绝时 evo/start 返回退出码 2"]],
-      tests: ["tests/", "回归保护与合成样例", "覆盖未来函数、费用、指标复算、状态机、门禁、数据错误、插件结构和端到端流程。fixture 明确标记为合成数据。", ["15 项测试全部通过", "测试不连接外部行情", "验证候选不修改基线"]]
+      tests: ["tests/", "回归保护与合成样例", "覆盖未来函数、下一开盘成交、最低佣金、印花税、公司行为、三段评价、基准和端到端流程。", ["21 项测试全部通过", "测试不连接外部行情", "验证候选不修改基线"]]
     };
 
     const roles = [
@@ -464,11 +464,11 @@
         ]
       },
       relative: {
-        note: "候选在通过左侧六项绝对门禁的基础上，还必须同时通过以下四项。evo 不会因候选更好而自动改写基线。",
+        note: "候选在通过绝对门禁的基础上，还必须同时通过以下四项。存在验证集时均使用验证集，最终测试集只报告。evo 不会自动改写基线。",
         rows: [
-          ["same_dataset", "== same", "候选与基线的输入 CSV SHA-256 必须一致。"],
-          ["sharpe_improvement", ">= 0.05", "候选测试集 Sharpe 至少比基线高 0.05。"],
-          ["candidate_total_return", ">= baseline", "候选测试集总收益不得低于基线。"],
+          ["same_dataset", "== same", "候选与基线的组合数据 SHA-256 必须一致。"],
+          ["sharpe_improvement", ">= 0.05", "候选评价区间 Sharpe 至少比基线高 0.05。"],
+          ["candidate_total_return", ">= baseline", "候选评价区间总收益不得低于基线。"],
           ["candidate_max_drawdown", "<= baseline + 0.02", "候选回撤最多比基线多 2 个百分点。"]
         ]
       }

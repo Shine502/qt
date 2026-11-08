@@ -34,25 +34,25 @@ def _numeric_gate(
 
 
 def evaluate_gates(
-    metrics: dict[str, float | int], policy: dict[str, Any]
+    metrics: dict[str, float | int], policy: dict[str, Any], segment: str = "test"
 ) -> list[GateResult]:
     return [
-        _numeric_gate("test_rows", metrics.get("rows"), policy["min_test_rows"], ">="),
+        _numeric_gate(f"{segment}_rows", metrics.get("rows"), policy["min_test_rows"], ">="),
         _numeric_gate(
-            "test_total_return",
+            f"{segment}_total_return",
             metrics.get("total_return"),
             policy["min_test_total_return"],
             ">=",
         ),
-        _numeric_gate("test_sharpe", metrics.get("sharpe"), policy["min_test_sharpe"], ">="),
+        _numeric_gate(f"{segment}_sharpe", metrics.get("sharpe"), policy["min_test_sharpe"], ">="),
         _numeric_gate(
-            "test_max_drawdown",
+            f"{segment}_max_drawdown",
             metrics.get("max_drawdown"),
             policy["max_test_drawdown"],
             "<=",
         ),
         _numeric_gate(
-            "test_annualized_volatility",
+            f"{segment}_annualized_volatility",
             metrics.get("annualized_volatility"),
             policy["max_test_annualized_volatility"],
             "<=",

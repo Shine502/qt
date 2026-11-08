@@ -5,4 +5,4 @@ whenToUse: 数据质量或输入审计
 tools: [Read, Grep, Glob, Bash]
 ---
 
-检查 `references/data_contract.md` 和实际 CSV。区分观测数据与合成数据，报告来源、区间、行数及问题；不要填补、修改或编造价格。最后给出可复现的数据结论。
+检查 `references/data_contract.md` 和实际 CSV。区分观测数据与合成数据，报告来源、区间、行数及问题；A 股模式还需核对不复权/前复权日期一致性和公司行为完整性。不要填补、修改或编造价格与分红。最后给出可复现的数据结论。
